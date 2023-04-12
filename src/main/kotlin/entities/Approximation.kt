@@ -24,7 +24,7 @@ fun buildDotsDescription(dots: Dots): String {
 }
 
 
-class Approximation(val name: String, private val errorExplanation: String, private val isPossible: (Dots) -> Boolean, private val approximationMethod: (Dots, MutableMap<String, Double>) -> Unit, private val expression: String) {
+class Approximation(val name: String, private val approximationMethod: (Dots, MutableMap<String, Double>) -> Unit, private val expression: String) {
     private var readyToBuild: Boolean = false;
     private val parameters: MutableMap<String, Double> = mutableMapOf();
 
@@ -32,8 +32,6 @@ class Approximation(val name: String, private val errorExplanation: String, priv
         this.approximationMethod(dots, this.parameters);
         this.readyToBuild = true;
     }
-
-    fun check(dots: Dots): Pair<Boolean, String> = if (isPossible(dots)) Pair(true, "$name can be used\n") else Pair(false, "$name can't be used due to $errorExplanation\n");
 
     fun description(function: Function, dots: Dots): String {
         val builder: StringBuilder = StringBuilder();
@@ -43,7 +41,7 @@ class Approximation(val name: String, private val errorExplanation: String, priv
         builder.append(";\n")
         builder.append("f(X) = ${dots.dots.map { function.getValueByX(it.x) }};\n");
         builder.append("E = ${dots.dots.map { function.getValueByX(it.x) - it.y }};\n");
-        builder.append("standard deviation = ${calcStandardDeviation(function, dots)};\n");
+        builder.append("standard deviation = ${calcStandardDeviation(function, dots)};\n\n");
         return builder.toString();
     }
 
@@ -58,8 +56,6 @@ class Approximation(val name: String, private val errorExplanation: String, priv
 
 val linearApproximation: Approximation = Approximation(
     name = "linear approximation",
-    errorExplanation = "nothing",
-    isPossible = fun (dots: Dots): Boolean = true,
     approximationMethod =  fun (dots: Dots, parameters: MutableMap<String, Double>) {
         val matrix: Matrix = Matrix(3, 2,
             listOf(
@@ -73,7 +69,7 @@ val linearApproximation: Approximation = Approximation(
                     dots.dots.sumOf { it.x.pow(2) },
                     dots.dots.sumOf { it.x * it.y },
                 ),
-            )
+            ),
         );
         val mainMinor = matrix.getMinor(listOf(0, 1), listOf(0, 1));
         parameters["a_0"] = matrix.getMinor(listOf(0, 1), listOf(2, 1)) / mainMinor;
@@ -84,8 +80,6 @@ val linearApproximation: Approximation = Approximation(
 
 val quadraticApproximation: Approximation = Approximation(
     name = "quadratic approximation",
-    errorExplanation = "nothing",
-    isPossible = fun (dots: Dots): Boolean = true,
     approximationMethod = fun (dots: Dots, parameters: MutableMap<String, Double>) {
         val matrix: Matrix = Matrix(4, 3,
             listOf(
@@ -119,8 +113,6 @@ val quadraticApproximation: Approximation = Approximation(
 
 val cubicApproximation: Approximation = Approximation(
     name = "cubic approximation",
-    errorExplanation = "nothing",
-    isPossible = fun (dots: Dots): Boolean = true,
     approximationMethod = fun (dots: Dots, parameters: MutableMap<String, Double>) {
         val matrix: Matrix = Matrix(5, 4,
             listOf(
@@ -165,10 +157,6 @@ val cubicApproximation: Approximation = Approximation(
 
 val exponentialApproximation: Approximation = Approximation(
     name = "exponential approximation",
-    errorExplanation = "dots with y <= 0",
-    isPossible = fun (dots: Dots): Boolean {
-        return dots.dots.minOf { it.y } > 0;
-    },
     approximationMethod = fun (dots: Dots, parameters: MutableMap<String, Double>) {
         val matrix: Matrix = Matrix(3, 2,
             listOf(
@@ -182,7 +170,7 @@ val exponentialApproximation: Approximation = Approximation(
                     dots.dots.sumOf { it.x.pow(2) },
                     dots.dots.sumOf { it.x * log(it.y, E) },
                 ),
-            )
+            ),
         );
         val mainMinor = matrix.getMinor(listOf(0, 1), listOf(0, 1));
         parameters["a_0"] = E.pow(matrix.getMinor(listOf(0, 1), listOf(2, 1)) / mainMinor);
@@ -193,10 +181,6 @@ val exponentialApproximation: Approximation = Approximation(
 
 val logarithmicApproximation: Approximation = Approximation(
     name = "logarithmic approximation",
-    errorExplanation = "dots with x <= 0",
-    isPossible = fun (dots: Dots): Boolean {
-        return dots.dots.minOf { it.x } > 0;
-    },
     approximationMethod = fun (dots: Dots, parameters: MutableMap<String, Double>) {
         val matrix: Matrix = Matrix(3, 2,
             listOf(
@@ -210,7 +194,7 @@ val logarithmicApproximation: Approximation = Approximation(
                     dots.dots.sumOf { log(it.x, E).pow(2) },
                     dots.dots.sumOf { log(it.x, E) * it.y },
                 ),
-            )
+            ),
         );
         val mainMinor = matrix.getMinor(listOf(0, 1), listOf(0, 1));
         parameters["a_0"] = matrix.getMinor(listOf(0, 1), listOf(2, 1)) / mainMinor;
@@ -221,10 +205,6 @@ val logarithmicApproximation: Approximation = Approximation(
 
 val powerApproximation: Approximation = Approximation(
     name = "power approximation",
-    errorExplanation = "dots with x <= 0 or y <= 0",
-    isPossible = fun (dots: Dots): Boolean {
-        return dots.dots.minOf { min(it.x, it.y) } > 0;
-    },
     approximationMethod = fun (dots: Dots, parameters: MutableMap<String, Double>) {
         val matrix: Matrix = Matrix(3, 2,
             listOf(
@@ -238,7 +218,7 @@ val powerApproximation: Approximation = Approximation(
                     dots.dots.sumOf { log(it.x, E).pow(2) },
                     dots.dots.sumOf { log(it.x, E) * log(it.y, E) },
                 ),
-            )
+            ),
         );
         val mainMinor = matrix.getMinor(listOf(0, 1), listOf(0, 1));
         parameters["a_0"] = E.pow(matrix.getMinor(listOf(0, 1), listOf(2, 1)) / mainMinor);

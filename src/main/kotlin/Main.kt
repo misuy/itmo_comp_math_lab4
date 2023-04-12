@@ -1,8 +1,12 @@
+//^^
+
 import entities.*
 import entities.Function
 import ui.ChartPanel
 import java.awt.Color
 import java.awt.Dimension
+import java.io.FileInputStream
+import java.util.*
 import javax.swing.JFrame
 import kotlin.math.max
 import kotlin.math.min
@@ -10,38 +14,28 @@ import kotlin.math.min
 val FRAME_SIZE: Dimension = Dimension(1000, 1000);
 
 fun main(args: Array<String>) {
-    val dots = Dots(listOf(Dot(1.0, 1.5), Dot(3.0, 4.0), Dot(2.0, 1.0), Dot(1.0, -10.0), Dot(0.1, 0.0), Dot(7.0, 7.0)));
+    val scanner: Scanner = if (args.size == 1) Scanner(FileInputStream(args[0])) else Scanner(System.`in`);
 
-    print(buildDotsDescription(dots));
-
-    val approximationResults: MutableMap<Approximation, Function> = mutableMapOf();
-
-    approximations.forEach {
-        val checkResult: Pair<Boolean, String> = it.check(dots);
-        print(checkResult.second);
-        if (it.check(dots).first) {
-            it.approximate(dots);
-            approximationResults[it] = it.buildFunction();
-        }
-    }
+    val dots = readDots(scanner);
+    println(buildDotsDescription(dots));
 
     var minStandardDeviation = Double.POSITIVE_INFINITY;
     var bestApproximation: Pair<Approximation, Function>? = null;
-
-    approximationResults.entries.forEach {
-        print(it.key.description(it.value, dots));
-        val standardDeviation: Double = calcStandardDeviation(it.value, dots);
+    approximations.forEach {
+        it.approximate(dots);
+        val function: Function = it.buildFunction();
+        print(it.description(function, dots));
+        val standardDeviation: Double = calcStandardDeviation(function, dots);
         if (standardDeviation < minStandardDeviation) {
             minStandardDeviation = standardDeviation;
-            bestApproximation = Pair(it.key, it.value);
+            bestApproximation = Pair(it, function);
         }
     }
 
     if (bestApproximation == null) throw IllegalArgumentException("there is no approximations");
-
     println("the best approximation is ${bestApproximation?.first?.name} with standard deviation = $minStandardDeviation");
-
     val function: Function = bestApproximation?.second as Function;
+
 
     val chartPanel: ChartPanel = ChartPanel();
     val horizontalSegmentSize: Double = dots.dots.maxOf { it.x } - dots.dots.minOf { it.x };
@@ -51,7 +45,8 @@ fun main(args: Array<String>) {
             min(dots.dots.minOf { it.x }, 0.0) - horizontalSegmentSize / 4,
             max(dots.dots.maxOf { it.x }, 0.0) + horizontalSegmentSize / 4
         ),
-        Segment(min(dots.dots.minOf { it.y }, 0.0) - verticalSegmentSize / 4,
+        Segment(
+            min(dots.dots.minOf { it.y }, 0.0) - verticalSegmentSize / 4,
             max(dots.dots.maxOf { it.y }, 0.0) + verticalSegmentSize / 4
         )
     );
